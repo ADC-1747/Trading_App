@@ -5,6 +5,11 @@ from ..database import get_db
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from ..auth import SECRET_KEY, ALGORITHM
+import bleach
+
+def sanitize_str(value: str) -> str:
+    return bleach.clean(value, tags=[], attributes={}, strip=True)
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -32,7 +37,10 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Username already registered")
     
     hashed_pw = utils.hash_password(user.password)
-    new_user = models.User(username=user.username, email=user.email, hashed_password=hashed_pw)
+    new_user = models.User(username=sanitize_str(user.username),
+                           email=sanitize_str(user.email),
+                           hashed_password=hashed_pw,
+                           role= sanitize_str(user.role) if user.role else "trader")
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -50,4 +58,4 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me")
 def read_users_me(current_user: models.User = Depends(get_current_user)):
-    return {"id": current_user.id, "username": current_user.username, "email": current_user.email}
+    return {"id": current_user.id, "username": current_user.username, "email": current_user.email, "role": current_user.role}

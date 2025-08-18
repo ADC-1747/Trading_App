@@ -1,4 +1,7 @@
-const API_URL = "http://localhost:8000"; // backend base
+// const API_URL = "http://localhost:8000"; // backend base
+
+export const API_URL = "https://localhost:8000"; // backend base
+
 
 // Generic POST helper
 async function postData(endpoint, data) {

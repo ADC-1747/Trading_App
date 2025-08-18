@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "./api";
 
 function UserPage() {
   const [user, setUser] = useState(null);
@@ -7,7 +8,7 @@ function UserPage() {
   useEffect(() => {
     if (!token) return;
 
-    fetch("http://localhost:8000/auth/me", {
+    fetch(`${API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -28,6 +29,7 @@ function UserPage() {
         <>
           <h2>Welcome, {user.username} 👋</h2>
           <p>Email: {user.email}</p>
+          <p>Role: {user.role}</p>
         </>
       ) : (
         <p>Loading user info...</p>

@@ -4,7 +4,8 @@ from .database import engine
 from .routers import auth
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = ["http://localhost:3000", "http://localhost:5173"]
+# origins = ["http://localhost:3000"]
+origins = ["https://localhost:3000"]
 
 
 
