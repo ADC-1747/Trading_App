@@ -10,6 +10,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.database import Base
 from app.database import engine
+from app.models import *   # import all models here
+
 
 
 

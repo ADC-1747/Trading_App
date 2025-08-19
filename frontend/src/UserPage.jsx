@@ -1,26 +1,37 @@
 import { useEffect, useState } from "react";
-import { API_URL } from "./api";
+import { useNavigate } from "react-router-dom"; // ⬅️ for navigation
+import { getUserPage } from "./api";
 
 function UserPage() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      navigate("/login"); // ⬅️ redirect if no token
+      return;
+    }
 
-    fetch(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Unauthorized");
-        return res.json();
-      })
-      .then((data) => setUser(data))
-      .catch(() => setUser(null));
-  }, [token]);
+    async function fetchUser() {
+      try {
+        const data = await getUserPage();
+        setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+        localStorage.removeItem("token");
+        navigate("/login"); // ⬅️ redirect on error/expired token
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  if (!token) {
-    return <p>Please login first.</p>;
+    fetchUser();
+  }, [token, navigate]);
+
+  if (loading) {
+    return <p>Loading user info...</p>;
   }
 
   return (
@@ -32,7 +43,7 @@ function UserPage() {
           <p>Role: {user.role}</p>
         </>
       ) : (
-        <p>Loading user info...</p>
+        <p>Could not load user info.</p>
       )}
     </div>
   );

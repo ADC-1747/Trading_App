@@ -56,6 +56,10 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.get("/me")
+# @router.get("/me")
+# def read_users_me(current_user: models.User = Depends(get_current_user)):
+#     return {"id": current_user.id, "username": current_user.username, "email": current_user.email, "role": current_user.role}
+
+@router.get("/me", response_model=schemas.UserResponse)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
-    return {"id": current_user.id, "username": current_user.username, "email": current_user.email, "role": current_user.role}
+    return current_user
