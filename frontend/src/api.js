@@ -45,10 +45,36 @@ async function postForm(endpoint, data) {
 }
 
 
-async function getRequest(endpoint,data=null){
+async function getRequest(endpoint){
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}${endpoint}`, {
     method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("token"); // clear invalid/expired token
+    window.location.href = "/login"; // redirect to login page
+    return;
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Request failed");
+  }
+
+  return res.json();
+
+}
+
+
+async function deleteRequest(endpoint){
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: "DELETE",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -85,11 +111,21 @@ export async function getMarket() {
 export async function getUserPage() {
   return getRequest("/auth/me")
 }
+export async function getUserOrders() {
+  return getRequest("/orders/me")
+}
+export async function getUserTrades() {
+  return getRequest("/trades/me")
+}
+export async function cancelActiveOrder(id) {
+  return deleteRequest(`/orders/cancel/${id}`)
+}
 
 export async function getTicker(id) {
-  return getRequest(`/order/symbol/${id}`)
+  return getRequest(`/orders/symbol/${id}`)
   
 }
+
 
 
 export async function postNewOrder(form) {

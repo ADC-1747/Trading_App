@@ -1,0 +1,35 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session, joinedload
+from typing import List
+from app.database import get_db
+from .auth import get_current_user
+from app.models import *
+from app.schemas import *
+
+router = APIRouter(
+    prefix="/trades",
+    tags=["trades"]
+)
+
+
+# Get all trades (admin/general purpose)
+@router.get("/", response_model=List[TradeResponse])
+def get_all_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    trades = db.query(Trade).all()
+    return trades
+
+
+# Get trades of current user
+@router.get("/me", response_model=List[TradeResponse])
+def get_my_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    trades = db.query(Trade).filter(
+        (Trade.buy_user_id == current_user.id) | (Trade.sell_user_id == current_user.id)
+    ).all()
+    return trades
+
+
+# Get trades by symbol
+@router.get("/symbol/{symbol_id}", response_model=List[TradeResponse])
+def get_trades_by_symbol(symbol_id: int, db: Session = Depends(get_db)):
+    trades = db.query(Trade).filter(Trade.symbol_id == symbol_id).all()
+    return trades

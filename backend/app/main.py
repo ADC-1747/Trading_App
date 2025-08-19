@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from . import models
 from .database import engine
-from .routers import auth, symbols, orders
+from .routers import auth, symbols, orders, trades
 from fastapi.middleware.cors import CORSMiddleware
 
 # origins = ["http://localhost:3000"]
@@ -24,6 +24,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(symbols.router)
 app.include_router(orders.router)
+app.include_router(trades.router)
 
 @app.get("/")
 def root():

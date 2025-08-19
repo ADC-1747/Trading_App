@@ -12,6 +12,7 @@ services:
       - ./certs:/app/certs
     depends_on:
       - db
+    restart: always
 
   frontend:
     build: ./frontend
@@ -19,9 +20,12 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      - ./frontend:/app
+      - /app/node_modules 
       - ./certs:/app/certs
     depends_on:
       - backend
+    restart: always
 
   db:
     image: postgres:15
@@ -35,6 +39,5 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
 volumes:
   postgres_data:
