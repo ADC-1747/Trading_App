@@ -5,6 +5,7 @@ from app.database import get_db
 from .auth import get_current_user
 from app.models import *
 from app.schemas import *
+from .matching import match_order
 
 router = APIRouter(
     prefix="/orders",
@@ -28,6 +29,7 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
         ticker=symbol.ticker,  # auto-fill ticker from symbol
         side=order.side,
         quantity=order.quantity,
+        exec_qty=0,
         price=order.price,
         type=order.type
     )
@@ -35,6 +37,10 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
     db.add(db_order)
     db.commit()
     db.refresh(db_order)
+
+    match_order(db_order, db)
+
+
     return db_order
 
 

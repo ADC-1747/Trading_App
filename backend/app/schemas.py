@@ -45,6 +45,7 @@ class OrderCreate(BaseModel):
     # ticker: str
     side: constr(to_lower=False, pattern="^(B|S)$")
     quantity: int
+    # exec_qty: int
     price: float
     type: constr(to_lower=False, pattern="^(M|L)$")
 
@@ -56,6 +57,7 @@ class OrderResponse(BaseModel):
     ticker: str
     side: str
     quantity: int
+    exec_qty: int
     price: float
     status: OrderStatus
     type: str

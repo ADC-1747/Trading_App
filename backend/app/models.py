@@ -46,6 +46,7 @@ class Order(Base):
     ticker = Column(String, index=True, nullable=False)
     side = Column(String)  # "buy" or "sell"
     quantity = Column(Integer)
+    exec_qty = Column(Integer)
     price = Column(Float)
     status = Column(Enum(OrderStatus), default=OrderStatus.pending)
     type = Column(String)

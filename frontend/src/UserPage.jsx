@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { getUserPage, getUserOrders, getUserTrades, cancelActiveOrder } from "./api"; // add past orders if needed
+import { getUserPage, getUserOrders, getUserTrades, cancelActiveOrder } from "./api";
 
 function UserPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
-  const [showOrders, setShowOrders] = useState(""); // "active" or "past"
+  const [showOrders, setShowOrders] = useState(""); // "active" | "past" | "trades"
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
@@ -43,15 +43,15 @@ function UserPage() {
       } else if (type === "past") {
         data = await getUserOrders();
         data = data.filter(
-          order => order.status === "executed" || order.status === "cancelled"
+          order => order.status === "filled" || order.status === "cancelled"
         );
-      } else {
+      } else if (type === "trades") {
         data = await getUserTrades();
       }
       setOrders(data);
       setShowOrders(type);
     } catch (err) {
-      console.error("Failed to fetch orders:", err);
+      console.error("Failed to fetch orders/trades:", err);
     }
   };
 
@@ -88,7 +88,8 @@ function UserPage() {
         </button>
       </div>
 
-      {orders.length > 0 && (
+      {/* Orders Table */}
+      {orders.length > 0 && showOrders !== "trades" && (
         <table className="mt-4 min-w-full border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
@@ -100,6 +101,7 @@ function UserPage() {
               <th className="px-4 py-2 border">Type</th>
               <th className="px-4 py-2 border">Status</th>
               <th className="px-4 py-2 border">Timestamp</th>
+              <th className="px-4 py-2 border">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +119,14 @@ function UserPage() {
                   {order.status === "pending" && (
                     <button
                       className="px-2 py-1 bg-red-500 text-white rounded"
-                      onClick={() => cancelActiveOrder(order.id)}
+                      onClick={async () => {
+                        try {
+                          await cancelActiveOrder(order.id);
+                          handleShowOrders(showOrders); // refresh
+                        } catch (err) {
+                          console.error("Failed to cancel order:", err);
+                        }
+                      }}
                     >
                       Cancel
                     </button>
@@ -128,6 +137,35 @@ function UserPage() {
           </tbody>
         </table>
       )}
+
+      {/* Trades Table */}
+      {orders.length > 0 && showOrders === "trades" && (
+        <table className="mt-4 min-w-full border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 border">Trade ID</th>
+                <th className="px-4 py-2 border">Ticker</th>
+                <th className="px-4 py-2 border">Buy Order ID</th>
+                <th className="px-4 py-2 border">Sell Order ID</th>
+                <th className="px-4 py-2 border">Price</th>
+                <th className="px-4 py-2 border">Quantity</th>
+                <th className="px-4 py-2 border">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((trade) => (
+                <tr key={trade.id}>
+                  <td className="px-4 py-2 border">{trade.id}</td>
+                  <td className="px-4 py-2 border">{trade.ticker}</td>
+                  <td className="px-4 py-2 border">{trade.buy_order_id}</td>
+                  <td className="px-4 py-2 border">{trade.sell_order_id}</td>
+                  <td className="px-4 py-2 border">{trade.trade_price}</td>
+                  <td className="px-4 py-2 border">{trade.trade_quantity}</td>
+                  <td className="px-4 py-2 border">{trade.timestamp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>      )}
     </div>
   );
 }
