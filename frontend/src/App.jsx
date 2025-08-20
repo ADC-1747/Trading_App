@@ -5,6 +5,7 @@ import UserPage from "./UserPage";
 import Market from "./Market";
 import Tricker from "./Ticker";
 import Ticker from "./Ticker";
+import './index.css' 
 
 function App() {
   return (
