@@ -47,9 +47,6 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
 # Get all orders (for admin or general purpose)
 @router.get("/all", response_model=List[OrderResponse])
 def get_all_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # orders = db.query(Order)\
-    #     .options(joinedload(Order.user), joinedload(Order.symbol))\
-    #     .all()
     orders = db.query(Order).all()
     return orders
 
