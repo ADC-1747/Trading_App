@@ -13,7 +13,7 @@ router = APIRouter(
 
 
 # Get all trades (admin/general purpose)
-@router.get("/", response_model=List[TradeResponse])
+@router.get("/all", response_model=List[TradeResponse])
 def get_all_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     trades = db.query(Trade).all()
     return trades

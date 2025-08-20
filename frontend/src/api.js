@@ -126,6 +126,13 @@ export async function getTicker(id) {
   
 }
 
+export async function getAllOrders() {
+  return getRequest("/orders/all")
+}
+
+export async function getAllTrades(params) {
+  return getRequest("/trades/all")
+}
 
 
 export async function postNewOrder(form) {
