@@ -53,3 +53,8 @@ flowchart TD
 <img width="960" height="540" alt="OrderForm" src="https://github.com/user-attachments/assets/9934f9b4-9655-47a5-8bd7-5a94f4d61a51" />
 <img width="960" height="540" alt="OrderBook" src="https://github.com/user-attachments/assets/8029377a-3296-434d-8c3f-f36f98f313e6" />
 
+## Approaches for scaling backend concurrency
+- Simple approach could be using row-level locks for transactions to avoid race conditions.
+- Implementing a priority queue for incoming requests for a smooth and sequential execution.
+- Nginx for load balancing incase of high number of requests.
+- Implementing the matching engine and the queue on a single thread hence no chance of leakage or locking problems.
