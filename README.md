@@ -37,3 +37,7 @@ flowchart TD
         C --> Trades[Trades Table]
         C --> Symbols[Symbols Table]
     end
+
+```
+## Test Coverage 
+<img width="960" height="540" alt="Test_coverage" src="https://github.com/user-attachments/assets/2b4eac66-526a-47c1-a86b-d158c6de20dd" />
