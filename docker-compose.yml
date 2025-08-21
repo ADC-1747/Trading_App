@@ -1,5 +1,24 @@
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build: ./backend
     container_name: fastapi_backend
@@ -15,13 +34,11 @@ services:
       - db
       - redis
     restart: always
-  
-  redis:
-    image: redis:7-alpine
-    container_name: redis
-    ports:
-      - "6379:6379"
+    command: >
+      sh -c "/wait-for-it.sh db:5432 --timeout=30 --strict -- uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile=/app/certs/localhost+2-key.pem --ssl-certfile=/app/certs/localhost+2.pem --reload"
 
+
+  
   frontend:
     build: ./frontend
     container_name: react_frontend
@@ -35,18 +52,5 @@ services:
       - backend
     restart: always
   
-
-  db:
-    image: postgres:15
-    container_name: postgres_db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
 volumes:
   postgres_data:
