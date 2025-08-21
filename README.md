@@ -1,11 +1,12 @@
-# Trading App
+# Trading App 
 
 
 
 
 
+## Architecture
 
-
+```mermaid
 flowchart TD
     subgraph Frontend
         A[React UI] -->|REST API| B[FastAPI Backend]
@@ -23,6 +24,3 @@ flowchart TD
         C --> Trades[Trades Table]
         C --> Symbols[Symbols Table]
     end
-
-    click A "https://reactjs.org" "React UI"
-    click B "https://fastapi.tiangolo.com/" "FastAPI Backend"
