@@ -6,6 +6,13 @@ from .auth import get_current_user
 from app.models import *
 from app.schemas import *
 from .matching import match_order
+from fastapi import FastAPI, Depends
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+import redis.asyncio as redis  # Use redis-py async client
+
+
+
 
 router = APIRouter(
     prefix="/orders",
@@ -14,7 +21,7 @@ router = APIRouter(
 
 
 # Create a new order
-@router.post("/new", response_model=OrderResponse)
+@router.post("/new", response_model=OrderResponse, dependencies=[Depends(RateLimiter(times=2, seconds=15))] )
 def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
 
     # Check if the symbol exists
@@ -47,6 +54,14 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
 # Get all orders (for admin or general purpose)
 @router.get("/all", response_model=List[OrderResponse])
 def get_all_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access all orders"
+        )
+
+
     orders = db.query(Order).all()
     return orders
 

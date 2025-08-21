@@ -7,12 +7,20 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+      - REDIS_URL=redis://redis:6379
     volumes:
       - ./backend:/app
       - ./certs:/app/certs
     depends_on:
       - db
+      - redis
     restart: always
+  
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
 
   frontend:
     build: ./frontend
@@ -26,6 +34,7 @@ services:
     depends_on:
       - backend
     restart: always
+  
 
   db:
     image: postgres:15

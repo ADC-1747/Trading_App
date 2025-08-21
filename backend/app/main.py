@@ -3,6 +3,10 @@ from . import models
 from .database import engine
 from .routers import auth, symbols, orders, trades, ws_orderbook
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Depends
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+import redis.asyncio as redis
 
 # origins = ["http://localhost:3000"]
 origins = ["https://localhost:3000"]
@@ -34,6 +38,11 @@ async def start_orderbook_updates():
     import asyncio
     symbol_ids = [1, 2, 3]  # all symbols you want to track
     asyncio.create_task(ws_orderbook.update_order_book(symbol_ids))
+
+@app.on_event("startup")
+async def startup():
+    r = redis.from_url("redis://redis:6379", encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(r)
 
 
 @app.get("/")

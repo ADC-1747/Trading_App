@@ -15,6 +15,14 @@ router = APIRouter(
 # Get all trades (admin/general purpose)
 @router.get("/all", response_model=List[TradeResponse])
 def get_all_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access all trades"
+        )
+
+
     trades = db.query(Trade).all()
     return trades
 

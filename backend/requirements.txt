@@ -9,3 +9,12 @@ python-jose[cryptography]
 pydantic[email]
 bleach
 alembic
+fastapi-limiter 
+redis
+pytest 
+pytest-asyncio
+httpx[http2]
+sqlalchemy-utils
+black
+flake8
+isort
