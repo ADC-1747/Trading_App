@@ -6,7 +6,7 @@ from fastapi_limiter.depends import RateLimiter
 from .defaults import create_default_symbols, create_default_user
 
 from . import models
-from .database import engine
+from .database import engine, SessionLocal
 from .routers import auth, orders, symbols, trades, ws_orderbook
 
 # origins = ["http://localhost:3000"]
@@ -17,7 +17,11 @@ origins = ["https://localhost:3000"]
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Trading App API",
+    description="REST API for handling users, symbols, and orders in the trading system.",
+    version="1.0.0"
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -41,7 +45,12 @@ def startup_populate():
 async def start_orderbook_updates():
     import asyncio
 
-    symbol_ids = [1, 2, 3]  # all symbols you want to track
+    db = SessionLocal()
+    try:
+        symbol_ids = [s.id for s in db.query(models.Symbol.id).all()]
+    finally:
+        db.close()
+
     asyncio.create_task(ws_orderbook.update_order_book(symbol_ids))
 
 

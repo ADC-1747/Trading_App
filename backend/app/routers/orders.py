@@ -21,6 +21,10 @@ router = APIRouter(prefix="/orders", tags=["orders"])
     "/new",
     response_model=OrderResponse,
     dependencies=[Depends(RateLimiter(times=2, seconds=15))],
+    summary="Create a new order",
+    description="Allows an authenticated user to create a **new order**. "
+                "The ticker is auto-filled from the selected symbol. "
+                "Rate limited to **2 requests every 15 seconds**."
 )
 def create_order(
     order: OrderCreate,
@@ -55,7 +59,10 @@ def create_order(
 
 
 # Get all orders (for admin or general purpose)
-@router.get("/all", response_model=List[OrderResponse])
+@router.get("/all", response_model=List[OrderResponse], summary="Get all orders (admin only)",
+    description="Returns a list of **all orders in the system**. "
+                "Only users with role `admin` can access this endpoint."
+)
 def get_all_orders(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -71,7 +78,9 @@ def get_all_orders(
 
 
 # Get current user's orders
-@router.get("/me", response_model=List[OrderResponse])
+@router.get("/me", response_model=List[OrderResponse], summary="Get my orders",
+    description="Fetches all orders that belong to the **currently authenticated user**."
+)
 def get_my_orders(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -85,7 +94,10 @@ def get_my_orders(
 
 
 # Cancel an order
-@router.delete("/cancel/{order_id}", response_model=OrderResponse)
+@router.delete("/cancel/{order_id}", response_model=OrderResponse, summary="Cancel an order",
+    description="Cancels an **existing order** by its ID. "
+                "Only the order owner can cancel it, and only if its status is **pending**."
+)
 def cancel_order(
     order_id: int,
     db: Session = Depends(get_db),
@@ -109,7 +121,10 @@ def cancel_order(
     return order
 
 
-@router.get("/symbol/{symbol_id}", response_model=List[OrderResponse])
+@router.get("/symbol/{symbol_id}", response_model=List[OrderResponse], summary="Get orders by symbol",
+    description="Fetches all orders that are linked to a given **symbol ID**. "
+                "Includes related user and symbol details."
+)
 def get_orders_by_symbol(
     symbol_id: int,
     db: Session = Depends(get_db),

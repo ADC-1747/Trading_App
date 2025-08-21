@@ -36,7 +36,10 @@ def get_current_user(
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router.post("/register", response_model=schemas.UserResponse)
+@router.post("/register", response_model=schemas.UserResponse, summary="Register a new user",
+    description="Creates a new user account with username, email, and password. "
+                "If no role is provided, the default role is **trader**."
+)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = (
         db.query(models.User).filter(models.User.username == user.username).first()
@@ -57,7 +60,10 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login")
+@router.post("/login", summary="User login",
+    description="Authenticates a user with username and password. "
+                "Returns a JWT access token if credentials are valid."
+)
 def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     db_user = (
         db.query(models.User).filter(models.User.username == user.username).first()
@@ -71,11 +77,10 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-# @router.get("/me")
-# def read_users_me(current_user: models.User = Depends(get_current_user)):
-#     return {"id": current_user.id, "username": current_user.username, "email": current_user.email, "role": current_user.role}
 
 
-@router.get("/me", response_model=schemas.UserResponse)
+@router.get("/me", response_model=schemas.UserResponse, summary="Get current user profile",
+    description="Returns details (id, username, email, role) of the currently authenticated user."
+)
 def read_users_me(current_user: models.User = Depends(get_current_user)):
     return current_user

@@ -125,3 +125,51 @@ async def websocket_endpoint(websocket: WebSocket, symbol_id: int):
         manager.disconnect(websocket)
     finally:
         db.close()
+
+
+
+@router.get("/ws/orderbook/{symbol_id}", tags=["WebSocket"])
+async def ws_orderbook_docs(symbol_id: int):
+    """
+    Summary:
+        Order Book WebSocket Stream (Documentation Only)
+
+    Description:
+        This endpoint is for **documentation purposes only**.  
+        The actual connection must be made using **WebSocket**:
+
+        ```
+        wss://<your-server>/ws/orderbook/{symbol_id}
+        ```
+
+        Once connected:
+        - The server will immediately send the latest **order book** and **last traded price (LTP)**.  
+        - Updates will then be broadcasted every **2 seconds**.  
+        - You can send any small message (like `"ping"`) to keep the connection alive.  
+
+        ### Response Format:
+        ```json
+        {
+            "symbol_id": 1,
+            "order_book": {
+                "bids": [
+                    {"price": 101.5, "quantity": 50},
+                    {"price": 101.0, "quantity": 30}
+                ],
+                "asks": [
+                    {"price": 102.0, "quantity": 40},
+                    {"price": 102.5, "quantity": 25}
+                ]
+            },
+            "ltp": 101.75
+        }
+        ```
+
+        ### Notes:
+        - `bids` → top 5 buy orders, sorted by **highest price first**  
+        - `asks` → top 5 sell orders, sorted by **lowest price first**  
+        - `ltp` → last traded price for the symbol  
+    """
+    return {
+        "note": "This is documentation only. Use WebSocket at ws://<your-server>/ws/orderbook/{symbol_id}"
+    }

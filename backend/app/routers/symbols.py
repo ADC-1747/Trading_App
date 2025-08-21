@@ -11,7 +11,10 @@ from .auth import get_current_user
 router = APIRouter()
 
 
-@router.get("/symbols", response_model=List[schemas.SymbolResponse])
+@router.get("/symbols", response_model=List[schemas.SymbolResponse], summary="Get all symbols",
+    description="Fetches a list of all available **symbols/instruments** in the system. "
+                "Accessible by any authenticated user."
+)
 def get_symbols(
     db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
