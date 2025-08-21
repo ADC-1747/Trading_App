@@ -49,11 +49,25 @@ def create_order(
         type=order.type,
     )
 
+
+    # db.add(db_order)
+    # db.commit()
+    # db.refresh(db_order)
+
+    # match_order(db_order, db)
+
     db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
+    db.flush()  # generate ID for trades
 
     match_order(db_order, db)
+
+    try:
+        db.commit()  # commit everything atomically
+    except SQLAlchemyError:
+        db.rollback()  # revert everything
+        raise  # propagate the error
+    db.refresh(db_order)
+
 
     return db_order
 
