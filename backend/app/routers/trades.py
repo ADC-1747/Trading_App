@@ -1,27 +1,28 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from typing import List
+
 from app.database import get_db
-from .auth import get_current_user
 from app.models import *
 from app.schemas import *
 
-router = APIRouter(
-    prefix="/trades",
-    tags=["trades"]
-)
+from .auth import get_current_user
+
+router = APIRouter(prefix="/trades", tags=["trades"])
 
 
 # Get all trades (admin/general purpose)
 @router.get("/all", response_model=List[TradeResponse])
-def get_all_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_all_trades(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
 
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access all trades"
+            detail="Not authorized to access all trades",
         )
-
 
     trades = db.query(Trade).all()
     return trades
@@ -29,10 +30,17 @@ def get_all_trades(db: Session = Depends(get_db), current_user: User = Depends(g
 
 # Get trades of current user
 @router.get("/me", response_model=List[TradeResponse])
-def get_my_trades(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    trades = db.query(Trade).filter(
-        (Trade.buy_user_id == current_user.id) | (Trade.sell_user_id == current_user.id)
-    ).all()
+def get_my_trades(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    trades = (
+        db.query(Trade)
+        .filter(
+            (Trade.buy_user_id == current_user.id)
+            | (Trade.sell_user_id == current_user.id)
+        )
+        .all()
+    )
     return trades
 
 

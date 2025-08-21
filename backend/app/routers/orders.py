@@ -1,34 +1,38 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
 from typing import List
-from app.database import get_db
-from .auth import get_current_user
-from app.models import *
-from app.schemas import *
-from .matching import match_order
-from fastapi import FastAPI, Depends
+
+import redis.asyncio as redis  # Use redis-py async client
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-import redis.asyncio as redis  # Use redis-py async client
+from sqlalchemy.orm import Session, joinedload
 
+from app.database import get_db
+from app.models import *
+from app.schemas import *
 
+from .auth import get_current_user
+from .matching import match_order
 
-
-router = APIRouter(
-    prefix="/orders",
-    tags=["orders"]
-)
+router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 # Create a new order
-@router.post("/new", response_model=OrderResponse, dependencies=[Depends(RateLimiter(times=2, seconds=15))] )
-def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post(
+    "/new",
+    response_model=OrderResponse,
+    dependencies=[Depends(RateLimiter(times=2, seconds=15))],
+)
+def create_order(
+    order: OrderCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
 
     # Check if the symbol exists
     symbol = db.query(Symbol).filter(Symbol.id == order.symbol_id).first()
     if not symbol:
         raise HTTPException(status_code=404, detail="Symbol not found")
-    print("symbol",symbol)
+    print("symbol", symbol)
 
     db_order = Order(
         user_id=current_user.id,
@@ -38,7 +42,7 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
         quantity=order.quantity,
         exec_qty=0,
         price=order.price,
-        type=order.type
+        type=order.type,
     )
 
     db.add(db_order)
@@ -47,20 +51,20 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db), current_user
 
     match_order(db_order, db)
 
-
     return db_order
 
 
 # Get all orders (for admin or general purpose)
 @router.get("/all", response_model=List[OrderResponse])
-def get_all_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_all_orders(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
 
     if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access all orders"
+            detail="Not authorized to access all orders",
         )
-
 
     orders = db.query(Order).all()
     return orders
@@ -68,23 +72,37 @@ def get_all_orders(db: Session = Depends(get_db), current_user: User = Depends(g
 
 # Get current user's orders
 @router.get("/me", response_model=List[OrderResponse])
-def get_my_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    orders = db.query(Order)\
-        .filter(Order.user_id == current_user.id)\
-        .options(joinedload(Order.user), joinedload(Order.symbol))\
+def get_my_orders(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    orders = (
+        db.query(Order)
+        .filter(Order.user_id == current_user.id)
+        .options(joinedload(Order.user), joinedload(Order.symbol))
         .all()
+    )
     return orders
 
 
 # Cancel an order
 @router.delete("/cancel/{order_id}", response_model=OrderResponse)
-def cancel_order(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    order = db.query(Order).filter(Order.id == order_id, Order.user_id == current_user.id).first()
+def cancel_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    order = (
+        db.query(Order)
+        .filter(Order.id == order_id, Order.user_id == current_user.id)
+        .first()
+    )
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     if order.status != OrderStatus.pending:
-        raise HTTPException(status_code=400, detail="Only pending orders can be cancelled")
-    
+        raise HTTPException(
+            status_code=400, detail="Only pending orders can be cancelled"
+        )
+
     order.status = OrderStatus.cancelled
     db.commit()
     db.refresh(order)
@@ -92,11 +110,15 @@ def cancel_order(order_id: int, db: Session = Depends(get_db), current_user: Use
 
 
 @router.get("/symbol/{symbol_id}", response_model=List[OrderResponse])
-def get_orders_by_symbol(symbol_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    orders = db.query(Order)\
-        .filter(Order.symbol_id == symbol_id)\
-        .options(joinedload(Order.user), joinedload(Order.symbol))\
+def get_orders_by_symbol(
+    symbol_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    orders = (
+        db.query(Order)
+        .filter(Order.symbol_id == symbol_id)
+        .options(joinedload(Order.user), joinedload(Order.symbol))
         .all()
+    )
     return orders
-
-

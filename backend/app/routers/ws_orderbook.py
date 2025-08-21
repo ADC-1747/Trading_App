@@ -1,11 +1,12 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import asyncio
-from typing import List, Dict
-from sqlalchemy.orm import Session
-from app.models import Order, Trade
-from app.database import SessionLocal
-from sqlalchemy import func
+from typing import Dict, List
 
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.database import SessionLocal
+from app.models import Order, Trade
 
 router = APIRouter()
 
@@ -32,7 +33,6 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-
 def get_ltp(db: Session, symbol_id: int):
     trade = (
         db.query(Trade)
@@ -46,20 +46,17 @@ def get_ltp(db: Session, symbol_id: int):
     return None
 
 
-
-
 async def get_order_book(db: Session, symbol_id: int):
     # Aggregate bids
     bids = (
         db.query(
-            Order.price,
-            func.sum(Order.quantity - Order.exec_qty).label("quantity")
+            Order.price, func.sum(Order.quantity - Order.exec_qty).label("quantity")
         )
         .filter(
             Order.symbol_id == symbol_id,
             Order.side == "B",
             Order.type == "L",
-            Order.status.in_(["pending", "partially_filled"])
+            Order.status.in_(["pending", "partially_filled"]),
         )
         .group_by(Order.price)
         .order_by(Order.price.desc())
@@ -69,14 +66,13 @@ async def get_order_book(db: Session, symbol_id: int):
     # Aggregate asks
     asks = (
         db.query(
-            Order.price,
-            func.sum(Order.quantity - Order.exec_qty).label("quantity")
+            Order.price, func.sum(Order.quantity - Order.exec_qty).label("quantity")
         )
         .filter(
             Order.symbol_id == symbol_id,
             Order.side == "S",
             Order.type == "L",
-            Order.status.in_(["pending", "partially_filled"])
+            Order.status.in_(["pending", "partially_filled"]),
         )
         .group_by(Order.price)
         .order_by(Order.price.asc())
@@ -84,12 +80,15 @@ async def get_order_book(db: Session, symbol_id: int):
     )
 
     order_book = {
-        "bids": [{"price": b.price, "quantity": b.quantity} for b in bids[:5]],  # top 5 bids
-        "asks": [{"price": a.price, "quantity": a.quantity} for a in asks[:5]],  # top 5 asks
+        "bids": [
+            {"price": b.price, "quantity": b.quantity} for b in bids[:5]
+        ],  # top 5 bids
+        "asks": [
+            {"price": a.price, "quantity": a.quantity} for a in asks[:5]
+        ],  # top 5 asks
     }
 
     return order_book
-
 
 
 async def update_order_book(symbol_ids: List[int]):
@@ -98,8 +97,11 @@ async def update_order_book(symbol_ids: List[int]):
         try:
             for symbol_id in symbol_ids:
                 order_book = await get_order_book(db, symbol_id)
-                ltp = get_ltp(db,symbol_id)
-                await manager.broadcast(symbol_id, {"symbol_id": symbol_id, "order_book": order_book, "ltp":ltp})
+                ltp = get_ltp(db, symbol_id)
+                await manager.broadcast(
+                    symbol_id,
+                    {"symbol_id": symbol_id, "order_book": order_book, "ltp": ltp},
+                )
         finally:
             db.close()
         await asyncio.sleep(2)
@@ -112,8 +114,10 @@ async def websocket_endpoint(websocket: WebSocket, symbol_id: int):
     try:
         # Send initial order book once
         order_book = await get_order_book(db, symbol_id)
-        ltp = get_ltp(db,symbol_id)
-        await websocket.send_json({"symbol_id": symbol_id, "order_book": order_book, "ltp":ltp})
+        ltp = get_ltp(db, symbol_id)
+        await websocket.send_json(
+            {"symbol_id": symbol_id, "order_book": order_book, "ltp": ltp}
+        )
 
         while True:
             await websocket.receive_text()  # keep connection alive

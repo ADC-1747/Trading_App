@@ -2,6 +2,7 @@ from app.models import Order
 from app.routers.matching import match_order
 from tests.conftest import TestingSessionLocal
 
+
 def test_match_order_basic(test_user, test_symbol):
     db = TestingSessionLocal()
 
@@ -14,7 +15,7 @@ def test_match_order_basic(test_user, test_symbol):
         user_id=test_user.id,
         symbol_id=test_symbol.id,
         ticker=test_symbol.ticker,
-        type="L"
+        type="L",
     )
 
     sell_order = Order(
@@ -25,7 +26,7 @@ def test_match_order_basic(test_user, test_symbol):
         user_id=test_user.id,
         symbol_id=test_symbol.id,
         ticker=test_symbol.ticker,
-        type="L"
+        type="L",
     )
 
     db.add_all([buy_order, sell_order])

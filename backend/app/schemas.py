@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, constr
-from datetime import datetime
-from typing import Optional, List
 import enum
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, constr
 
 
 class UserCreate(BaseModel):
@@ -10,9 +11,11 @@ class UserCreate(BaseModel):
     password: constr(min_length=6)
     role: constr(to_lower=True, pattern="^(trader)$") = "trader"
 
+
 class UserLogin(BaseModel):
     username: constr(min_length=3, max_length=20, pattern="^[a-zA-Z0-9_]+$")
     password: str
+
 
 class UserResponse(BaseModel):
     id: int
@@ -27,10 +30,10 @@ class UserResponse(BaseModel):
 class SymbolResponse(BaseModel):
     id: int
     name: str
-    ticker: str  
+    ticker: str
+
     class Config:
         orm_mode = True
-
 
 
 class OrderStatus(str, enum.Enum):
@@ -92,4 +95,3 @@ class TradeResponse(BaseModel):
 
     class Config:
         orm_mode = True
-

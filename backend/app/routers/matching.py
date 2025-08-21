@@ -1,6 +1,8 @@
-from app.models import Order, Trade
-from sqlalchemy.orm import Session
 from sqlalchemy import asc, desc
+from sqlalchemy.orm import Session
+
+from app.models import Order, Trade
+
 
 def match_order(new_order: Order, db: Session):
     """
@@ -13,12 +15,16 @@ def match_order(new_order: Order, db: Session):
     if new_order.side == "B":
         # Market BUY → best sell (lowest ask)
         # Limit BUY → best sells where price <= my price
-        query = db.query(Order).filter(
-            Order.symbol_id == new_order.symbol_id,
-            Order.side == "S",
-            Order.type == "L",
-            Order.status.in_(["pending", "partially_filled"])
-        ).order_by(asc(Order.price), asc(Order.timestamp))
+        query = (
+            db.query(Order)
+            .filter(
+                Order.symbol_id == new_order.symbol_id,
+                Order.side == "S",
+                Order.type == "L",
+                Order.status.in_(["pending", "partially_filled"]),
+            )
+            .order_by(asc(Order.price), asc(Order.timestamp))
+        )
 
         if new_order.type == "L":
             query = query.filter(Order.price <= new_order.price)
@@ -26,12 +32,16 @@ def match_order(new_order: Order, db: Session):
         opposite_orders = query.all()
 
     else:  # 🔹 If it's a SELL order, look for BUYs
-        query = db.query(Order).filter(
-            Order.symbol_id == new_order.symbol_id,
-            Order.side == "B",
-            Order.type == "L",
-            Order.status.in_(["pending", "partially_filled"])
-        ).order_by(desc(Order.price), asc(Order.timestamp))
+        query = (
+            db.query(Order)
+            .filter(
+                Order.symbol_id == new_order.symbol_id,
+                Order.side == "B",
+                Order.type == "L",
+                Order.status.in_(["pending", "partially_filled"]),
+            )
+            .order_by(desc(Order.price), asc(Order.timestamp))
+        )
 
         if new_order.type == "L":
             query = query.filter(Order.price >= new_order.price)

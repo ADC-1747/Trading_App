@@ -1,14 +1,15 @@
-import pytest
 import uuid
+
+import pytest
+import redis
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
-from app.main import app
-from app.models import Base, User, Symbol, Order, Trade
-from app.database import get_db
-from app.routers.auth import get_current_user
-import redis
 
+from app.database import get_db
+from app.main import app
+from app.models import Base, Order, Symbol, Trade, User
+from app.routers.auth import get_current_user
 
 # ---------------------------
 # Postgres test DB connection
@@ -18,6 +19,7 @@ SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@db:5432/test_db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Override get_db dependency to use test DB
 def override_get_db():
     db = TestingSessionLocal()
@@ -25,6 +27,7 @@ def override_get_db():
         yield db
     finally:
         db.close()
+
 
 app.dependency_overrides[get_db] = override_get_db
 
@@ -71,7 +74,7 @@ def test_user():
         user = User(
             username=unique_username,
             email=f"{unique_username}@example.com",
-            hashed_password="fakehash"
+            hashed_password="fakehash",
         )
         db.add(user)
         db.commit()
