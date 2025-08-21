@@ -1,5 +1,11 @@
 # Trading App 
 
+## Tech Stack
+- Frontend : React
+- Backend : FastAPI
+- Database : PostgreSQL
+- In Memory DB : Redis
+- Deployment : Docker
 
 
 
