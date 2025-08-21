@@ -3,6 +3,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
+from .defaults import create_default_symbols, create_default_user
 
 from . import models
 from .database import engine
@@ -31,6 +32,10 @@ app.include_router(orders.router)
 app.include_router(trades.router)
 app.include_router(ws_orderbook.router)
 
+@app.on_event("startup")
+def startup_populate():
+    create_default_symbols()
+    create_default_user()
 
 @app.on_event("startup")
 async def start_orderbook_updates():
@@ -44,6 +49,7 @@ async def start_orderbook_updates():
 async def startup():
     r = redis.from_url("redis://redis:6379", encoding="utf-8", decode_responses=True)
     await FastAPILimiter.init(r)
+
 
 
 @app.get("/")
