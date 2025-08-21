@@ -6,23 +6,23 @@
 
 
 
-+-------------------+         REST API         +------------------+
-|                   | ----------------------> |                  |
-|     React UI      |                          |   FastAPI App    |
-|                   | <---------------------- |                  |
-+-------------------+       JSON Response     +------------------+
-       |                                      |       |
-       | WebSocket (live orderbook)           |       | SQLAlchemy
-       v                                      v       v
-+-------------------+                      +------------------+
-|  WebSocket Client |                      |   PostgreSQL DB  |
-+-------------------+                      |  users, orders,  |
-                                           |  trades, symbols |
-                                           +------------------+
-                                                  |
-                                                  | Redis
-                                                  v
-                                           +------------------+
-                                           |   Redis Cache /  |
-                                           |  Rate Limiter    |
-                                           +------------------+
+flowchart TD
+    subgraph Frontend
+        A[React UI] -->|REST API| B[FastAPI Backend]
+        A -->|WebSocket| B
+    end
+
+    subgraph Backend
+        B -->|SQLAlchemy ORM| C[(PostgreSQL)]
+        B -->|Redis Cache / Rate Limiter| D[(Redis)]
+    end
+
+    subgraph Database
+        C --> Users[Users Table]
+        C --> Orders[Orders Table]
+        C --> Trades[Trades Table]
+        C --> Symbols[Symbols Table]
+    end
+
+    click A "https://reactjs.org" "React UI"
+    click B "https://fastapi.tiangolo.com/" "FastAPI Backend"
