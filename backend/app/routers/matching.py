@@ -7,14 +7,13 @@ from app.models import Order, Trade
 def match_order(new_order: Order, db: Session):
     """
     Match incoming order (supports MARKET and LIMIT).
+    MARKET orders will have remaining quantity canceled if no opposite orders are left.
     """
 
     remaining_qty = new_order.quantity
 
     # 🔹 If it's a BUY order, look for SELLs
     if new_order.side == "B":
-        # Market BUY → best sell (lowest ask)
-        # Limit BUY → best sells where price <= my price
         query = (
             db.query(Order)
             .filter(
@@ -25,13 +24,12 @@ def match_order(new_order: Order, db: Session):
             )
             .order_by(asc(Order.price), asc(Order.timestamp))
         )
-
         if new_order.type == "L":
             query = query.filter(Order.price <= new_order.price)
 
         opposite_orders = query.all()
 
-    else:  # 🔹 If it's a SELL order, look for BUYs
+    else:  # SELL order → look for BUYs
         query = (
             db.query(Order)
             .filter(
@@ -42,17 +40,23 @@ def match_order(new_order: Order, db: Session):
             )
             .order_by(desc(Order.price), asc(Order.timestamp))
         )
-
         if new_order.type == "L":
             query = query.filter(Order.price >= new_order.price)
 
         opposite_orders = query.all()
 
-    # No liquidity found → leave order pending
+    # 🔹 No liquidity at all
     if not opposite_orders:
-        db.commit()
+        if new_order.type == "M":  # MARKET order → cancel completely
+            new_order.status = "cancelled"
+            new_order.exec_qty = 0
+            db.add(new_order)
+            db.commit()
+        else:
+            db.commit()  # LIMIT order → leave pending
         return
 
+    # 🔹 Match orders
     for o in opposite_orders:
         if remaining_qty <= 0:
             break
@@ -61,11 +65,7 @@ def match_order(new_order: Order, db: Session):
         if available_qty <= 0:
             continue
 
-        # fill amount
         fill_qty = min(remaining_qty, available_qty)
-
-        # 🔹 Market executes at counterparty’s price
-        # 🔹 Limit executes at counterparty’s price as well (price-time priority)
         trade_price = o.price
 
         # Create trade
@@ -83,18 +83,18 @@ def match_order(new_order: Order, db: Session):
 
         # Update matched order
         o.exec_qty += fill_qty
-        if o.exec_qty == o.quantity:
-            o.status = "filled"
-        else:
-            o.status = "partially_filled"
+        o.status = "filled" if o.exec_qty == o.quantity else "partially_filled"
 
-        # Update new order progress
         remaining_qty -= fill_qty
 
     # 🔹 Update new order status
     new_order.exec_qty = new_order.quantity - remaining_qty
+
     if remaining_qty == 0:
         new_order.status = "filled"
+    elif new_order.type == "M" and remaining_qty > 0:
+        # MARKET order partially filled → cancel remaining
+        new_order.status = "cancelled"
     elif new_order.exec_qty > 0:
         new_order.status = "partially_filled"
     else:
